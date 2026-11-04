@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weather</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛅</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky-top: #cfe3f5;
+    --sky-bottom: #f4f8fc;
+    --ink: #14263a;
+    --ink-soft: #4d6076;
+    --panel: rgba(255,255,255,.72);
+    --line: rgba(20,38,58,.14);
+    --accent: #1f6fd1;
+    --error: #b3261e;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --sky-top: #14243a;
+      --sky-bottom: #0b1420;
+      --ink: #e8f0f8;
+      --ink-soft: #9db0c4;
+      --panel: rgba(255,255,255,.06);
+      --line: rgba(255,255,255,.14);
+      --accent: #6aa8f0;
+      --error: #ff8a80;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100vh;
+    font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: linear-gradient(180deg, var(--sky-top), var(--sky-bottom) 70%) fixed;
+    padding: 28px 18px 48px;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+
+  form { display: flex; gap: 8px; flex-wrap: wrap; }
+  input[type=search] {
+    flex: 1 1 220px; min-width: 0;
+    font: inherit; font-size: 1.05rem; color: var(--ink);
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 12px; padding: 13px 16px;
+  }
+  button, select {
+    font: inherit; color: var(--ink);
+    border: 1px solid var(--line); background: var(--panel);
+    border-radius: 12px; padding: 13px 16px; cursor: pointer;
+  }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  input:focus-visible, button:focus-visible, select:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+  #status { margin: 22px 2px; color: var(--ink-soft); min-height: 1.4em; }
+  #status.error { color: var(--error); }
+
+  .now { margin-top: 10px; }
+  .place { font-size: 1.1rem; color: var(--ink-soft); margin: 0; }
+  .temp-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .temp { font-size: clamp(5rem, 22vw, 9rem); font-weight: 800; line-height: 1; letter-spacing: -.04em; margin: 4px 0; }
+  .temp small { font-size: .38em; font-weight: 600; letter-spacing: 0; vertical-align: top; position: relative; top: .35em; margin-left: .05em; }
+  .icon { font-size: clamp(3.5rem, 12vw, 5.5rem); line-height: 1; }
+  .cond { font-size: 1.35rem; font-weight: 600; margin: 0 0 18px; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+  .stats div { padding: 14px 16px; }
+  .stats div + div { border-left: 1px solid var(--line); }
+  .stats dt { font-size: .85rem; color: var(--ink-soft); margin: 0 0 4px; }
+  .stats dd { margin: 0; font-size: 1.35rem; font-weight: 600; }
+
+  h2 { font-size: 1.1rem; font-weight: 600; margin: 34px 0 12px; }
+  .days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .day { border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 14px 10px; text-align: center; }
+  .day .name { font-weight: 600; }
+  .day .ico { font-size: 2rem; margin: 8px 0 4px; }
+  .day .hi { font-weight: 600; }
+  .day .lo { color: var(--ink-soft); }
+  .day .rain { font-size: .85rem; color: var(--accent); margin-top: 6px; }
+  .day .desc { font-size: .8rem; color: var(--ink-soft); min-height: 2.4em; }
+
+  @media (max-width: 600px) {
+    .days { grid-template-columns: 1fr; }
+    .day { display: grid; grid-template-columns: 70px 40px 1fr auto; align-items: center; gap: 8px; text-align: left; padding: 10px 14px; }
+    .day .ico { margin: 0; font-size: 1.6rem; }
+    .day .desc { min-height: 0; }
+    .day .rain { margin: 0; }
+    .stats dd { font-size: 1.1rem; }
+  }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <form id="search">
+    <input id="city" type="search" placeholder="Search a city, e.g. Bhopal" autocomplete="off" aria-label="City" required>
+    <select id="units" aria-label="Units">
+      <option value="metric">°C</option>
+      <option value="imperial">°F</option>
+    </select>
+    <button class="primary" type="submit">Get weather</button>
+  </form>
+
+  <p id="status" role="status">Search for a city to see its weather.</p>
+
+  <section id="result" hidden>
+    <div class="now">
+      <p class="place" id="place"></p>
+      <div class="temp-row">
+        <div class="temp" id="temp"></div>
+        <div class="icon" id="icon" aria-hidden="true"></div>
+      </div>
+      <p class="cond" id="cond"></p>
+      <dl class="stats">
+        <div><dt>Humidity</dt><dd id="hum"></dd></div>
+        <div><dt>Feels like</dt><dd id="feels"></dd></div>
+        <div><dt>Wind</dt><dd id="wind"></dd></div>
+      </dl>
+    </div>
+
+    <h2>Next 5 days</h2>
+    <div class="days" id="days"></div>
+  </section>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const form = $("search"), statusEl = $("status"), result = $("result");
+
+  function setStatus(msg, isError = false) {
+    statusEl.textContent = msg;
+    statusEl.classList.toggle("error", isError);
+  }
+
+  function dayName(iso, i) {
+    if (i === 0) return "Today";
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: "short" });
+  }
+
+  function render(r) {
+    const u = r.tempUnit, round = n => Math.round(n);
+    $("place").textContent = [r.city, r.region, r.country].filter(Boolean).join(", ");
+    $("temp").innerHTML = round(r.current.temperature) + "<small></small>";
+    $("temp").querySelector("small").textContent = u;
+    $("icon").textContent = r.current.icon;
+    $("cond").textContent = r.current.condition;
+    $("hum").textContent = r.current.humidity + "%";
+    $("feels").textContent = round(r.current.feelsLike) + u;
+    $("wind").textContent = round(r.current.windSpeed) + " " + r.windUnit;
+
+    const days = $("days");
+    days.replaceChildren();
+    r.forecast.forEach((d, i) => {
+      const el = document.createElement("div");
+      el.className = "day";
+      const make = (cls, text) => {
+        const s = document.createElement("div");
+        s.className = cls; s.textContent = text; return s;
+      };
+      const temps = document.createElement("div");
+      const hi = document.createElement("span"); hi.className = "hi"; hi.textContent = round(d.maxTemp) + "°";
+      const lo = document.createElement("span"); lo.className = "lo"; lo.textContent = " / " + round(d.minTemp) + "°";
+      temps.append(hi, lo);
+      el.append(make("name", dayName(d.date, i)), make("ico", d.icon), make("desc", d.condition),
+                temps, make("rain", d.precipitationChance + "% rain"));
+      days.append(el);
+    });
+    result.hidden = false;
+  }
+
+  async function load(city) {
+    setStatus("Loading…");
+    result.hidden = true;
+    try {
+      const url = "/api/weather?city=" + encodeURIComponent(city) + "&units=" + $("units").value;
+      const res = await fetch(url);
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.detail || "Something went wrong.");
+      render(body);
+      setStatus("");
+      localStorage.setItem("lastCity", city);
+    } catch (e) {
+      setStatus(e.message, true);
+    }
+  }
+
+  form.addEventListener("submit", e => { e.preventDefault(); load($("city").value.trim()); });
+  $("units").addEventListener("change", () => { if ($("city").value.trim()) load($("city").value.trim()); });
+
+  const last = (() => { try { return localStorage.getItem("lastCity"); } catch { return null; } })();
+  if (last) { $("city").value = last; load(last); }
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: weather-app
+    runtime: docker
+    plan: free
+    healthCheckPath: /
